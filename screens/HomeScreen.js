@@ -138,8 +138,8 @@ export default function HomeScreen({ navigation, theme }) {
       </ScrollView>
 
       <TouchableOpacity
-        style={[styles.floatingButton,{ backgroundColor: theme.surface, borderColor: theme.border }]}
-        onPress={() => navigation.navigate("Scanner")}
+  style={[styles.floatingButton,{ backgroundColor: theme.surface, borderColor: theme.border }]}
+  onPress={() => navigation?.navigate("Scanner")}
 >
   <Text style={{ fontSize: 28 }}>📷</Text>
 </TouchableOpacity>
