@@ -5,8 +5,8 @@ import {
 } from 'react-native';
 import * as Progress from 'react-native-progress';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+export default function HomeScreen({ navigation, theme }) {
 
-export default function HomeScreen({ theme }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -137,9 +137,12 @@ export default function HomeScreen({ theme }) {
 
       </ScrollView>
 
-      <TouchableOpacity style={[styles.floatingButton, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-        <Text style={{ fontSize: 28 }}>📷</Text>
-      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.floatingButton,{ backgroundColor: theme.surface, borderColor: theme.border }]}
+        onPress={() => navigation.navigate("Scanner")}
+>
+  <Text style={{ fontSize: 28 }}>📷</Text>
+</TouchableOpacity>
     </SafeAreaView>
   );
 }

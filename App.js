@@ -16,6 +16,7 @@ import OnboardingGoal from './screens/OnboardingGoal';
 import OnboardingCalories from './screens/OnboardingCalories';
 import WelcomeScreen from './screens/WelcomeScreen';
 import HomeScreen from './screens/HomeScreen';
+import ScannerScreen from './screens/ScannerScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -79,7 +80,8 @@ function MainApp({ theme, toggleTheme, navigation }) {
         name="Home"
         options={{ tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🏠</Text> }}
       >
-        {() => <HomeScreen theme={theme} />}
+        {/* FIX: pass navigation properly */}
+        {(props) => <HomeScreen {...props} theme={theme} />}
       </Tab.Screen>
 
       <Tab.Screen
@@ -150,7 +152,15 @@ export default function App() {
         <Stack.Screen name="OnboardingGoal">{props => <OnboardingGoal {...props} theme={theme} />}</Stack.Screen>
         <Stack.Screen name="OnboardingCalories">{props => <OnboardingCalories {...props} theme={theme} />}</Stack.Screen>
         <Stack.Screen name="Welcome">{props => <WelcomeScreen {...props} theme={theme} />}</Stack.Screen>
-        <Stack.Screen name="MainApp">{props => <MainApp {...props} theme={theme} toggleTheme={toggleTheme} />}</Stack.Screen>
+
+        <Stack.Screen name="MainApp">
+          {props => <MainApp {...props} theme={theme} toggleTheme={toggleTheme} />}
+        </Stack.Screen>
+
+        {/* Scanner stays exactly as you had it */}
+        <Stack.Screen name="Scanner">
+          {props => <ScannerScreen {...props} theme={theme} />}
+        </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
   );
