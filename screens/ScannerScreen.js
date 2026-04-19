@@ -28,19 +28,15 @@ export default function ScannerScreen({ navigation, theme }) {
     setLoading(true);
 
     try {
-      console.log('Barcode scanned:', data);
-
       const res = await fetch(
         `https://world.openfoodfacts.org/api/v2/product/${data}.json`
       );
       const json = await res.json();
 
-      console.log('Response status:', json.status);
-
       if (!json.product) {
         Alert.alert(
           'Product not found',
-          "This barcode wasn't found in our database. Try scanning again or add it manually.",
+          "This barcode wasn't found in our database.",
           [{
             text: 'Scan again', onPress: () => {
               setScanned(false);
@@ -57,17 +53,23 @@ export default function ScannerScreen({ navigation, theme }) {
       const name = json.product.product_name || 'Unknown Product';
       const brand = json.product.brands || '';
 
-      console.log('Full product keys:', Object.keys(json.product));
-      console.log('Nutriments raw:', n);
-
-      // ✅ Drink detection (correct location)
+      // Primary drink detection
       const per = json.product.nutrition_data_per || "100g";
-      const isDrink = per === "100ml";
+      const isDrinkPrimary = per === "100ml";
 
+      // Fallback drink detection (because API is inconsistent)
+      const nameLower = name.toLowerCase();
+      const brandLower = brand.toLowerCase();
+      const drinkKeywords = ["drink", "juice", "soda", "cola", "energy", "red bull", "monster", "beverage"];
+      const isDrinkFallback =
+        drinkKeywords.some(k => nameLower.includes(k)) ||
+        drinkKeywords.some(k => brandLower.includes(k));
+
+      const isDrink = isDrinkPrimary || isDrinkFallback;
 
       const getVal = (...keys) => {
         for (const k of keys) {
-          if (n[k] !== undefined && n[k] !== null && n[k] !== '') 
+          if (n[k] !== undefined && n[k] !== null && n[k] !== '')
             return parseFloat(n[k]);
         }
         return 0;
@@ -93,15 +95,14 @@ export default function ScannerScreen({ navigation, theme }) {
           isDrink ? "fat_100ml" : "fat_100g",
           "fat"
         )),
-        per,
+        per: isDrink ? "100ml" : "100g",
         isDrink,
       });
 
     } catch (err) {
-      console.log('Fetch error:', err.message);
       Alert.alert(
         'Connection error',
-        'Could not fetch product. Check your internet connection.',
+        'Could not fetch product.',
         [{
           text: 'OK', onPress: () => {
             setScanned(false);
@@ -148,7 +149,7 @@ export default function ScannerScreen({ navigation, theme }) {
     return (
       <View style={[styles.centered, { backgroundColor: theme.background }]}>
         <Text style={[styles.centeredText, { color: theme.text }]}>📷 Camera access denied</Text>
-        <Text style={[styles.centeredSub, { color: theme.textSecondary }]}>Please enable camera access in your phone settings</Text>
+        <Text style={[styles.centeredSub, { color: theme.textSecondary }]}>Enable camera access in settings</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: theme.accent }]}>
           <Text style={styles.backBtnText}>Go Back</Text>
         </TouchableOpacity>
@@ -218,17 +219,23 @@ export default function ScannerScreen({ navigation, theme }) {
             </View>
             <View style={styles.macroDivider} />
             <View style={styles.macroItem}>
-              <Text style={[styles.macroValue, { color: '#FF6B6B' }]}>{product.protein}g</Text>
+              <Text style={[styles.macroValue, { color: '#FF6B6B' }]}>
+                {product.protein}{product.isDrink ? "ml" : "g"}
+              </Text>
               <Text style={styles.macroLabel}>Protein</Text>
             </View>
             <View style={styles.macroDivider} />
             <View style={styles.macroItem}>
-              <Text style={[styles.macroValue, { color: '#FFD93D' }]}>{product.carbs}g</Text>
+              <Text style={[styles.macroValue, { color: '#FFD93D' }]}>
+                {product.carbs}{product.isDrink ? "ml" : "g"}
+              </Text>
               <Text style={styles.macroLabel}>Carbs</Text>
             </View>
             <View style={styles.macroDivider} />
             <View style={styles.macroItem}>
-              <Text style={[styles.macroValue, { color: '#6BCB77' }]}>{product.fat}g</Text>
+              <Text style={[styles.macroValue, { color: '#6BCB77' }]}>
+                {product.fat}{product.isDrink ? "ml" : "g"}
+              </Text>
               <Text style={styles.macroLabel}>Fat</Text>
             </View>
           </View>

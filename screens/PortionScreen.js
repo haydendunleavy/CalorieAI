@@ -74,28 +74,28 @@ export default function PortionScreen({ route, navigation, theme }) {
           <View style={styles.macroDivider} />
 
           <View style={styles.macroItem}>
-            <Text style={[styles.macroValue, { color: "#FF6B6B" }]}>{protein}g</Text>
+            <Text style={[styles.macroValue, { color: "#FF6B6B" }]}>{protein}{isDrink ? "ml" : "g"}</Text>
             <Text style={styles.macroLabel}>Protein</Text>
           </View>
 
           <View style={styles.macroDivider} />
 
           <View style={styles.macroItem}>
-            <Text style={[styles.macroValue, { color: "#FFD93D" }]}>{carbs}g</Text>
+            <Text style={[styles.macroValue, { color: "#FFD93D" }]}>{carbs}{isDrink ? "ml" : "g"}</Text>
             <Text style={styles.macroLabel}>Carbs</Text>
           </View>
 
           <View style={styles.macroDivider} />
 
           <View style={styles.macroItem}>
-            <Text style={[styles.macroValue, { color: "#6BCB77" }]}>{fat}g</Text>
+            <Text style={[styles.macroValue, { color: "#6BCB77" }]}>{fat}{isDrink ? "ml" : "g"}</Text>
             <Text style={styles.macroLabel}>Fat</Text>
           </View>
         </View>
 
         <Text style={[styles.perText, { color: theme.textSecondary }]}>
             Per {amount > 0 ? `${amount}${isDrink ? "ml" : "g"}` : per}
-        </Text>
+    </Text>
 
         <TouchableOpacity
           style={[styles.button, { backgroundColor: theme.accent, opacity: amount > 0 ? 1 : 0.4 }]}
