@@ -54,21 +54,17 @@ export default function ScannerScreen({ navigation, theme }) {
       }
 
       const n = json.product.nutriments || {};
+      const servingSize = json.product.serving_quantity || 100;
       const name = json.product.product_name || 'Unknown Product';
       const brand = json.product.brands || '';
 
+      // Debug logs — in correct position after n is declared
       console.log('Full product keys:', Object.keys(json.product));
       console.log('Nutriments raw:', n);
 
-      // ✅ Drink detection (correct location)
-      const per = json.product.nutrition_data_per || "100g";
-      const isDrink = per === "100ml";
-
-
       const getVal = (...keys) => {
         for (const k of keys) {
-          if (n[k] !== undefined && n[k] !== null && n[k] !== '') 
-            return parseFloat(n[k]);
+          if (n[k] !== undefined && n[k] !== null && n[k] !== '') return parseFloat(n[k]);
         }
         return 0;
       };
@@ -76,25 +72,12 @@ export default function ScannerScreen({ navigation, theme }) {
       setProduct({
         name,
         brand,
-        emoji: isDrink ? "🥤" : "🏷️",
-        calories: Math.round(getVal(
-          isDrink ? "energy-kcal_100ml" : "energy-kcal_100g",
-          "energy-kcal"
-        )),
-        protein: Math.round(getVal(
-          isDrink ? "proteins_100ml" : "proteins_100g",
-          "proteins"
-        )),
-        carbs: Math.round(getVal(
-          isDrink ? "carbohydrates_100ml" : "carbohydrates_100g",
-          "carbohydrates"
-        )),
-        fat: Math.round(getVal(
-          isDrink ? "fat_100ml" : "fat_100g",
-          "fat"
-        )),
-        per,
-        isDrink,
+        emoji: '🏷️',
+        calories: Math.round(getVal('energy-kcal_100g', 'energy-kcal', 'energy_100g')),
+        protein: Math.round(getVal('proteins_100g', 'protein_100g', 'proteins')),
+        carbs: Math.round(getVal('carbohydrates_100g', 'carbohydrate_100g', 'carbohydrates')),
+        fat: Math.round(getVal('fat_100g', 'fats_100g', 'fat')),
+        per: '100g',
       });
 
     } catch (err) {
@@ -115,18 +98,8 @@ export default function ScannerScreen({ navigation, theme }) {
   };
 
   const handleAddMeal = () => {
-    isProcessing.current = false;
-
-    navigation.navigate("PortionScreen", {
-      name: product.name,
-      brand: product.brand,
-      caloriesPer100: product.calories,
-      proteinPer100: product.protein,
-      carbsPer100: product.carbs,
-      fatPer100: product.fat,
-      per: product.per,
-      isDrink: product.isDrink,
-    });
+    Alert.alert('Added!', `${product.name} has been logged.`);
+    navigation.goBack();
   };
 
   const handleScanAgain = () => {

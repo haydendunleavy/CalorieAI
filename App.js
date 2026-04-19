@@ -17,6 +17,7 @@ import OnboardingCalories from './screens/OnboardingCalories';
 import WelcomeScreen from './screens/WelcomeScreen';
 import HomeScreen from './screens/HomeScreen';
 import ScannerScreen from './screens/ScannerScreen';
+import PortionScreen from './screens/PortionScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -152,6 +153,8 @@ export default function App() {
         <Stack.Screen name="OnboardingGoal">{props => <OnboardingGoal {...props} theme={theme} />}</Stack.Screen>
         <Stack.Screen name="OnboardingCalories">{props => <OnboardingCalories {...props} theme={theme} />}</Stack.Screen>
         <Stack.Screen name="Welcome">{props => <WelcomeScreen {...props} theme={theme} />}</Stack.Screen>
+        <Stack.Screen name="PortionScreen">{props => <PortionScreen {...props} theme={theme} />}</Stack.Screen>
+
 
         <Stack.Screen name="MainApp">
           {props => <MainApp {...props} theme={theme} toggleTheme={toggleTheme} />}
