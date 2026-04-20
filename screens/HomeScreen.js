@@ -100,40 +100,46 @@ export default function HomeScreen({ navigation, theme }) {
     Animated.timing(anim, {
       toValue: 1,
       duration: 260,
-      useNativeDriver: false, // <-- FIX
+      useNativeDriver: false, // IMPORTANT FIX
     }).start();
   };
 
   // Target center position + width
   const TARGET_WIDTH = SCREEN_WIDTH * 0.9;
   const TARGET_X = (SCREEN_WIDTH - TARGET_WIDTH) / 2;
-  const TARGET_Y = (SCREEN_HEIGHT - animMeal.layout.height * 1.1) / 2;
+  const TARGET_Y = SCREEN_HEIGHT * 0.32;
 
-  const cloneStyle = animMeal
-    ? {
-        position: 'absolute',
-        left: anim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [animMeal.layout.x, TARGET_X],
-        }),
-        top: anim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [animMeal.layout.y, TARGET_Y],
-        }),
-        width: anim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [animMeal.layout.width, TARGET_WIDTH],
-        }),
-        transform: [
-          {
-            scale: anim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [1, 1.1],
-            }),
-          },
-        ],
-      }
-    : {};
+  // Safe cloneStyle (no layout-of-null crash)
+  let cloneStyle = {};
+  if (animMeal) {
+    cloneStyle = {
+      position: 'absolute',
+
+      left: anim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [animMeal.layout.x, TARGET_X],
+      }),
+
+      top: anim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [animMeal.layout.y, TARGET_Y],
+      }),
+
+      width: anim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [animMeal.layout.width, TARGET_WIDTH],
+      }),
+
+      transform: [
+        {
+          scale: anim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [1, 1.1],
+          }),
+        },
+      ],
+    };
+  }
 
   const blurOpacity = anim.interpolate({
     inputRange: [0, 1],
@@ -460,7 +466,14 @@ export default function HomeScreen({ navigation, theme }) {
 
       {/* Animated overlay + blur/dim + cloned card */}
       {animMeal && (
-        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        <TouchableOpacity
+          activeOpacity={1}
+          style={StyleSheet.absoluteFill}
+          onPress={() => {
+            if (!animMeal) return;
+            setAnimMeal(null);
+          }}
+        >
           {/* Blur or dim fallback */}
           <Animated.View
             style={[
@@ -485,15 +498,18 @@ export default function HomeScreen({ navigation, theme }) {
           </Animated.View>
 
           {/* Enlarged animated card */}
-          <Animated.View style={cloneStyle}>
-            <View style={[
-              styles.mealCard,
-              {
-                backgroundColor: theme.card,
-                borderColor: theme.cardBorder,
-                paddingTop: 40, // extra space for edit/delete buttons
-              }
-            ]}>
+          <Animated.View style={cloneStyle} pointerEvents="box-none">
+            <View
+              pointerEvents="auto"
+              style={[
+                styles.mealCard,
+                {
+                  backgroundColor: theme.card,
+                  borderColor: theme.cardBorder,
+                  paddingTop: 40,
+                },
+              ]}
+            >
               {/* Edit + Delete buttons */}
               <View style={styles.cloneActions}>
                 <TouchableOpacity
@@ -519,7 +535,7 @@ export default function HomeScreen({ navigation, theme }) {
               {renderMealCardContent(animMeal.meal)}
             </View>
           </Animated.View>
-        </View>
+        </TouchableOpacity>
       )}
     </SafeAreaView>
   );
@@ -652,7 +668,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
 
-  // Actions on the enlarged animated card
+  // Edit/Delete buttons on enlarged card
   cloneActions: {
     position: 'absolute',
     top: 18,
@@ -661,5 +677,4 @@ const styles = StyleSheet.create({
     gap: 20,
     zIndex: 999,
   },
-
 });
