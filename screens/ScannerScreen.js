@@ -21,6 +21,25 @@ export default function ScannerScreen({ navigation, theme }) {
     getPermission();
   }, []);
 
+  // ── Regex-based drink detection ──────────────────────────────────────────
+  const detectIsDrink = (product) => {
+  const quantity    = (product.quantity    || '').trim().toLowerCase();
+  const per         = (product.nutrition_data_per || '').trim().toLowerCase();
+  const servingSize = (product.serving_size || '').trim().toLowerCase();
+
+  // Check if the last characters of quantity are ml
+  const mlRegex = /ml$/i;
+  const gRegex  = /g$/i;
+
+  if (mlRegex.test(quantity))    return true;
+  if (gRegex.test(quantity))     return false;
+  if (mlRegex.test(per))         return true;
+  if (gRegex.test(per))          return false;
+  if (mlRegex.test(servingSize)) return true;
+
+  return false;
+};
+
   const handleBarCodeScanned = async ({ type, data }) => {
     if (isProcessing.current) return;
     isProcessing.current = true;
@@ -28,7 +47,7 @@ export default function ScannerScreen({ navigation, theme }) {
     setLoading(true);
 
     try {
-      const res = await fetch(
+      const res  = await fetch(
         `https://world.openfoodfacts.org/api/v2/product/${data}.json`
       );
       const json = await res.json();
@@ -38,34 +57,22 @@ export default function ScannerScreen({ navigation, theme }) {
           'Product not found',
           "This barcode wasn't found in our database.",
           [{
-            text: 'Scan again', onPress: () => {
+            text: 'Scan again',
+            onPress: () => {
               setScanned(false);
               setProduct(null);
               isProcessing.current = false;
-            }
+            },
           }]
         );
         setLoading(false);
         return;
       }
 
-      const n = json.product.nutriments || {};
-      const name = json.product.product_name || 'Unknown Product';
-      const brand = json.product.brands || '';
-
-      // Primary drink detection
-      const per = json.product.nutrition_data_per || "100g";
-      const isDrinkPrimary = per === "100ml";
-
-      // Fallback drink detection (because API is inconsistent)
-      const nameLower = name.toLowerCase();
-      const brandLower = brand.toLowerCase();
-      const drinkKeywords = ["drink", "juice", "soda", "cola", "energy", "red bull", "monster", "beverage"];
-      const isDrinkFallback =
-        drinkKeywords.some(k => nameLower.includes(k)) ||
-        drinkKeywords.some(k => brandLower.includes(k));
-
-      const isDrink = isDrinkPrimary || isDrinkFallback;
+      const isDrink = detectIsDrink(json.product);
+      const n       = json.product.nutriments || {};
+      const name    = json.product.product_name || 'Unknown Product';
+      const brand   = json.product.brands       || '';
 
       const getVal = (...keys) => {
         for (const k of keys) {
@@ -75,27 +82,33 @@ export default function ScannerScreen({ navigation, theme }) {
         return 0;
       };
 
+      // For drinks try _100ml fields first, then fall back to _100g
+      // For food always use _100g fields
       setProduct({
         name,
         brand,
-        emoji: isDrink ? "🥤" : "🏷️",
+        emoji:    isDrink ? '🥤' : '🏷️',
         calories: Math.round(getVal(
-          isDrink ? "energy-kcal_100ml" : "energy-kcal_100g",
-          "energy-kcal"
+          isDrink ? 'energy-kcal_100ml' : 'energy-kcal_100g',
+          'energy-kcal_100g',
+          'energy-kcal'
         )),
         protein: Math.round(getVal(
-          isDrink ? "proteins_100ml" : "proteins_100g",
-          "proteins"
+          isDrink ? 'proteins_100ml' : 'proteins_100g',
+          'proteins_100g',
+          'proteins'
         )),
         carbs: Math.round(getVal(
-          isDrink ? "carbohydrates_100ml" : "carbohydrates_100g",
-          "carbohydrates"
+          isDrink ? 'carbohydrates_100ml' : 'carbohydrates_100g',
+          'carbohydrates_100g',
+          'carbohydrates'
         )),
         fat: Math.round(getVal(
-          isDrink ? "fat_100ml" : "fat_100g",
-          "fat"
+          isDrink ? 'fat_100ml' : 'fat_100g',
+          'fat_100g',
+          'fat'
         )),
-        per: isDrink ? "100ml" : "100g",
+        per: isDrink ? '100ml' : '100g',
         isDrink,
       });
 
@@ -104,10 +117,11 @@ export default function ScannerScreen({ navigation, theme }) {
         'Connection error',
         'Could not fetch product.',
         [{
-          text: 'OK', onPress: () => {
+          text: 'OK',
+          onPress: () => {
             setScanned(false);
             isProcessing.current = false;
-          }
+          },
         }]
       );
     }
@@ -117,16 +131,15 @@ export default function ScannerScreen({ navigation, theme }) {
 
   const handleAddMeal = () => {
     isProcessing.current = false;
-
-    navigation.navigate("PortionScreen", {
-      name: product.name,
-      brand: product.brand,
+    navigation.navigate('PortionScreen', {
+      name:           product.name,
+      brand:          product.brand,
       caloriesPer100: product.calories,
-      proteinPer100: product.protein,
-      carbsPer100: product.carbs,
-      fatPer100: product.fat,
-      per: product.per,
-      isDrink: product.isDrink,
+      proteinPer100:  product.protein,
+      carbsPer100:    product.carbs,
+      fatPer100:      product.fat,
+      per:            product.per,
+      isDrink:        product.isDrink,
     });
   };
 
@@ -136,11 +149,15 @@ export default function ScannerScreen({ navigation, theme }) {
     isProcessing.current = false;
   };
 
+  // ── Permission states ────────────────────────────────────────────────────
+
   if (hasPermission === null) {
     return (
       <View style={[styles.centered, { backgroundColor: theme.background }]}>
         <ActivityIndicator color={theme.accent} />
-        <Text style={[styles.centeredText, { color: theme.textSecondary }]}>Requesting camera access...</Text>
+        <Text style={[styles.centeredText, { color: theme.textSecondary }]}>
+          Requesting camera access...
+        </Text>
       </View>
     );
   }
@@ -149,13 +166,20 @@ export default function ScannerScreen({ navigation, theme }) {
     return (
       <View style={[styles.centered, { backgroundColor: theme.background }]}>
         <Text style={[styles.centeredText, { color: theme.text }]}>📷 Camera access denied</Text>
-        <Text style={[styles.centeredSub, { color: theme.textSecondary }]}>Enable camera access in settings</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: theme.accent }]}>
+        <Text style={[styles.centeredSub, { color: theme.textSecondary }]}>
+          Enable camera access in settings
+        </Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={[styles.backBtn, { backgroundColor: theme.accent }]}
+        >
           <Text style={styles.backBtnText}>Go Back</Text>
         </TouchableOpacity>
       </View>
     );
   }
+
+  // ── Main render ──────────────────────────────────────────────────────────
 
   return (
     <View style={styles.container}>
@@ -172,6 +196,7 @@ export default function ScannerScreen({ navigation, theme }) {
         }}
       />
 
+      {/* Top bar */}
       <SafeAreaView style={styles.topBar}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backButtonText}>← Back</Text>
@@ -180,6 +205,7 @@ export default function ScannerScreen({ navigation, theme }) {
         <View style={{ width: 70 }} />
       </SafeAreaView>
 
+      {/* Scan box overlay */}
       {!product && (
         <View style={styles.overlay} pointerEvents="none">
           <View style={styles.scanBox}>
@@ -194,6 +220,7 @@ export default function ScannerScreen({ navigation, theme }) {
         </View>
       )}
 
+      {/* Loading */}
       {loading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#fff" />
@@ -201,6 +228,7 @@ export default function ScannerScreen({ navigation, theme }) {
         </View>
       )}
 
+      {/* Product card */}
       {product && !loading && (
         <View style={styles.productCard}>
           <View style={styles.productHeader}>
@@ -219,23 +247,17 @@ export default function ScannerScreen({ navigation, theme }) {
             </View>
             <View style={styles.macroDivider} />
             <View style={styles.macroItem}>
-              <Text style={[styles.macroValue, { color: '#FF6B6B' }]}>
-                {product.protein}{product.isDrink ? "ml" : "g"}
-              </Text>
+              <Text style={[styles.macroValue, { color: '#FF6B6B' }]}>{product.protein}g</Text>
               <Text style={styles.macroLabel}>Protein</Text>
             </View>
             <View style={styles.macroDivider} />
             <View style={styles.macroItem}>
-              <Text style={[styles.macroValue, { color: '#FFD93D' }]}>
-                {product.carbs}{product.isDrink ? "ml" : "g"}
-              </Text>
+              <Text style={[styles.macroValue, { color: '#FFD93D' }]}>{product.carbs}g</Text>
               <Text style={styles.macroLabel}>Carbs</Text>
             </View>
             <View style={styles.macroDivider} />
             <View style={styles.macroItem}>
-              <Text style={[styles.macroValue, { color: '#6BCB77' }]}>
-                {product.fat}{product.isDrink ? "ml" : "g"}
-              </Text>
+              <Text style={[styles.macroValue, { color: '#6BCB77' }]}>{product.fat}g</Text>
               <Text style={styles.macroLabel}>Fat</Text>
             </View>
           </View>

@@ -61,6 +61,19 @@ const api = {
     return response.json();
   },
 
+  updateMeal: async (id, meal) => {
+    const token = await AsyncStorage.getItem('token');
+    const response = await fetch(`${BASE_URL}/meals/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(meal),
+    });
+    return response.json();
+  },
+
   deleteMeal: async (id) => {
     const token = await AsyncStorage.getItem('token');
     const response = await fetch(`${BASE_URL}/meals/${id}`, {
