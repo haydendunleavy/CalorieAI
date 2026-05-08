@@ -19,6 +19,9 @@ import HomeScreen from './screens/HomeScreen';
 import ScannerScreen from './screens/ScannerScreen';
 import PortionScreen from './screens/PortionScreen';
 import EditMealScreen from './screens/EditMealScreen';
+import ProgressScreen from './screens/ProgressScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import ManualFoodScreen from './screens/ManualFoodScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -63,6 +66,45 @@ function PlaceholderScreen({ title, theme }) {
   );
 }
 
+function LogFoodScreen({ theme, navigation }) {
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ flex: 1, padding: 24, justifyContent: 'center', gap: 16 }}>
+        <Text style={{ fontSize: 28, fontWeight: '800', color: theme.text, letterSpacing: -0.5 }}>
+          Log Food
+        </Text>
+        <Text style={{ fontSize: 15, color: theme.textSecondary, marginBottom: 8 }}>
+          How would you like to log your meal?
+        </Text>
+
+        <TouchableOpacity
+          style={{ backgroundColor: theme.accent, padding: 20, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }}
+          onPress={() => navigation.navigate('Scanner')}
+        >
+          <Text style={{ fontSize: 32 }}>📷</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>Scan Barcode</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>Scan any food product barcode</Text>
+          </View>
+          <Text style={{ color: '#fff', fontSize: 18 }}>→</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={{ backgroundColor: theme.surface, borderWidth: 1, borderColor: theme.border, padding: 20, borderRadius: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }}
+          onPress={() => navigation.navigate('ManualFood')}
+        >
+          <Text style={{ fontSize: 32 }}>✏️</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: theme.text, fontSize: 16, fontWeight: '700' }}>Add Manually</Text>
+            <Text style={{ color: theme.textSecondary, fontSize: 13 }}>Type in the nutrition info yourself</Text>
+          </View>
+          <Text style={{ color: theme.textSecondary, fontSize: 18 }}>→</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
 function MainApp({ theme, toggleTheme, navigation }) {
   return (
     <Tab.Navigator
@@ -82,7 +124,6 @@ function MainApp({ theme, toggleTheme, navigation }) {
         name="Home"
         options={{ tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🏠</Text> }}
       >
-        {/* FIX: pass navigation properly */}
         {(props) => <HomeScreen {...props} theme={theme} />}
       </Tab.Screen>
 
@@ -90,21 +131,23 @@ function MainApp({ theme, toggleTheme, navigation }) {
         name="Log Food"
         options={{ tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>➕</Text> }}
       >
-        {() => <PlaceholderScreen title="➕ Log Food" theme={theme} />}
+        {(props) => <LogFoodScreen {...props} theme={theme} />}
       </Tab.Screen>
 
+      {/* ← NEW */}
       <Tab.Screen
-        name="AI Scan"
-        options={{ tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📷</Text> }}
+        name="Progress"
+        options={{ tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📊</Text> }}
       >
-        {() => <PlaceholderScreen title="📷 AI Scan" theme={theme} />}
+        {() => <ProgressScreen theme={theme} />}
       </Tab.Screen>
 
+      {/* ← REPLACED placeholder with SettingsScreen */}
       <Tab.Screen
         name="Profile"
         options={{ tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>👤</Text> }}
       >
-        {(props) => <ProfileScreen {...props} theme={theme} toggleTheme={toggleTheme} />}
+        {(props) => <SettingsScreen {...props} theme={theme} toggleTheme={toggleTheme} />}
       </Tab.Screen>
     </Tab.Navigator>
   );
@@ -156,6 +199,8 @@ export default function App() {
         <Stack.Screen name="Welcome">{props => <WelcomeScreen {...props} theme={theme} />}</Stack.Screen>
         <Stack.Screen name="PortionScreen">{props => <PortionScreen {...props} theme={theme} />}</Stack.Screen>
         <Stack.Screen name="EditMeal">{props => <EditMealScreen {...props} theme={theme} />}</Stack.Screen>
+        <Stack.Screen name="ManualFood">{props => <ManualFoodScreen {...props} theme={theme} />}
+</Stack.Screen>
 
 
         <Stack.Screen name="MainApp">
