@@ -25,9 +25,10 @@ export default function EditMealScreen({ route, navigation, theme }) {
   const [fat, setFat] = useState(String(meal.fat || 0));
   const [loading, setLoading] = useState(false);
 
-  // ───────────────────────────────────────────────────────────────
-  // Slide‑up + fade‑in animation
-  // ───────────────────────────────────────────────────────────────
+  // NEW: auto-calc toggle
+  const [autoCalc, setAutoCalc] = useState(true);
+
+  // Slide-up animation
   const slideAnim = useRef(new Animated.Value(40)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -46,9 +47,22 @@ export default function EditMealScreen({ route, navigation, theme }) {
     ]).start();
   }, []);
 
-  // ───────────────────────────────────────────────────────────────
+  // NEW: Auto-calc calories using 4-4-9 rule
+  useEffect(() => {
+    if (!autoCalc) return;
+
+    const p = parseFloat(protein) || 0;
+    const c = parseFloat(carbs) || 0;
+    const f = parseFloat(fat) || 0;
+
+    const calculated = Math.round((p * 4) + (c * 4) + (f * 9));
+
+    if (calculated > 0) {
+      setCalories(String(calculated));
+    }
+  }, [protein, carbs, fat, autoCalc]);
+
   // Save meal
-  // ───────────────────────────────────────────────────────────────
   const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert('Error', 'Meal name cannot be empty.');
@@ -77,9 +91,7 @@ export default function EditMealScreen({ route, navigation, theme }) {
     setLoading(false);
   };
 
-  // ───────────────────────────────────────────────────────────────
   // Delete meal
-  // ───────────────────────────────────────────────────────────────
   const handleDelete = () => {
     Alert.alert(
       'Delete meal',
@@ -162,6 +174,7 @@ export default function EditMealScreen({ route, navigation, theme }) {
               </Text>
 
               <View style={styles.macroGrid}>
+                {/* Calories */}
                 <View style={styles.macroInput}>
                   <Text style={[styles.label, { color: theme.textSecondary }]}>Calories</Text>
                   <TextInput
@@ -174,12 +187,16 @@ export default function EditMealScreen({ route, navigation, theme }) {
                       },
                     ]}
                     value={calories}
-                    onChangeText={setCalories}
+                    onChangeText={(val) => {
+                      setAutoCalc(false);
+                      setCalories(val);
+                    }}
                     keyboardType="numeric"
                     placeholderTextColor={theme.placeholder}
                   />
                 </View>
 
+                {/* Protein */}
                 <View style={styles.macroInput}>
                   <Text style={[styles.label, { color: '#FF6B6B' }]}>Protein (g)</Text>
                   <TextInput
@@ -192,12 +209,16 @@ export default function EditMealScreen({ route, navigation, theme }) {
                       },
                     ]}
                     value={protein}
-                    onChangeText={setProtein}
+                    onChangeText={(val) => {
+                      setAutoCalc(true);
+                      setProtein(val);
+                    }}
                     keyboardType="numeric"
                     placeholderTextColor={theme.placeholder}
                   />
                 </View>
 
+                {/* Carbs */}
                 <View style={styles.macroInput}>
                   <Text style={[styles.label, { color: '#FFD93D' }]}>Carbs (g)</Text>
                   <TextInput
@@ -210,12 +231,16 @@ export default function EditMealScreen({ route, navigation, theme }) {
                       },
                     ]}
                     value={carbs}
-                    onChangeText={setCarbs}
+                    onChangeText={(val) => {
+                      setAutoCalc(true);
+                      setCarbs(val);
+                    }}
                     keyboardType="numeric"
                     placeholderTextColor={theme.placeholder}
                   />
                 </View>
 
+                {/* Fat */}
                 <View style={styles.macroInput}>
                   <Text style={[styles.label, { color: '#6BCB77' }]}>Fat (g)</Text>
                   <TextInput
@@ -228,7 +253,10 @@ export default function EditMealScreen({ route, navigation, theme }) {
                       },
                     ]}
                     value={fat}
-                    onChangeText={setFat}
+                    onChangeText={(val) => {
+                      setAutoCalc(true);
+                      setFat(val);
+                    }}
                     keyboardType="numeric"
                     placeholderTextColor={theme.placeholder}
                   />

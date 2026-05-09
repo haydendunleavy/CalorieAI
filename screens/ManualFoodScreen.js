@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, KeyboardAvoidingView, Platform,
@@ -9,14 +9,39 @@ import api from '../api';
 const QUICK_EMOJIS = ['🍽️', '🥗', '🍗', '🥩', '🐟', '🥚', '🧀', '🥛', '🍞', '🍚', '🍝', '🥣', '🥦', '🍎', '🍌', '🥜', '🧁', '🍫', '🥤', '☕'];
 
 export default function ManualFoodScreen({ navigation, theme }) {
-  const [name, setName]         = useState('');
-  const [calories, setCalories] = useState('');
-  const [protein, setProtein]   = useState('');
-  const [carbs, setCarbs]       = useState('');
-  const [fat, setFat]           = useState('');
-  const [emoji, setEmoji]       = useState('🍽️');
-  const [loading, setLoading]   = useState(false);
+  const [name, setName]             = useState('');
+  const [calories, setCalories]     = useState('');
+  const [protein, setProtein]       = useState('');
+  const [carbs, setCarbs]           = useState('');
+  const [fat, setFat]               = useState('');
+  const [emoji, setEmoji]           = useState('🍽️');
+  const [loading, setLoading]       = useState(false);
   const [showEmojis, setShowEmojis] = useState(false);
+  const [autoCalc, setAutoCalc]     = useState(true);
+
+  // Auto-calculate calories using 4-4-9 rule when macros change
+  useEffect(() => {
+    if (!autoCalc) return;
+    const p = parseFloat(protein) || 0;
+    const c = parseFloat(carbs)   || 0;
+    const f = parseFloat(fat)     || 0;
+    const calculated = Math.round((p * 4) + (c * 4) + (f * 9));
+    if (calculated > 0) {
+      setCalories(String(calculated));
+    }
+  }, [protein, carbs, fat, autoCalc]);
+
+  // If user manually edits calories, stop auto-calculating
+  const handleCaloriesChange = (val) => {
+    setAutoCalc(false);
+    setCalories(val);
+  };
+
+  // Reset auto-calc when macros are cleared
+  const handleMacroChange = (setter) => (val) => {
+    setAutoCalc(true);
+    setter(val);
+  };
 
   const isValid = name.trim() && calories;
 
@@ -25,7 +50,7 @@ export default function ManualFoodScreen({ navigation, theme }) {
     setLoading(true);
     try {
       const result = await api.addMeal({
-        name: name.trim(),
+        name:     name.trim(),
         emoji,
         calories: parseFloat(calories) || 0,
         protein:  parseFloat(protein)  || 0,
@@ -103,24 +128,11 @@ export default function ManualFoodScreen({ navigation, theme }) {
           <View style={[styles.macroCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <Text style={[styles.macroCardTitle, { color: theme.text }]}>Nutrition info</Text>
             <Text style={[styles.macroCardSub, { color: theme.textSecondary }]}>
-              Enter the actual amount consumed (not per 100g)
+              Enter macros and calories will calculate automatically
             </Text>
 
             <View style={styles.macroGrid}>
-              <View style={styles.macroInput}>
-                <Text style={[styles.label, { color: theme.textSecondary }]}>
-                  Calories <Text style={{ color: theme.danger }}>*</Text>
-                </Text>
-                <TextInput
-                  style={[styles.macroField, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
-                  placeholder="0"
-                  placeholderTextColor={theme.placeholder}
-                  value={calories}
-                  onChangeText={setCalories}
-                  keyboardType="numeric"
-                />
-              </View>
-
+              {/* Protein */}
               <View style={styles.macroInput}>
                 <Text style={[styles.label, { color: '#FF6B6B' }]}>Protein (g)</Text>
                 <TextInput
@@ -128,11 +140,12 @@ export default function ManualFoodScreen({ navigation, theme }) {
                   placeholder="0"
                   placeholderTextColor={theme.placeholder}
                   value={protein}
-                  onChangeText={setProtein}
+                  onChangeText={handleMacroChange(setProtein)}
                   keyboardType="numeric"
                 />
               </View>
 
+              {/* Carbs */}
               <View style={styles.macroInput}>
                 <Text style={[styles.label, { color: '#FFD93D' }]}>Carbs (g)</Text>
                 <TextInput
@@ -140,11 +153,12 @@ export default function ManualFoodScreen({ navigation, theme }) {
                   placeholder="0"
                   placeholderTextColor={theme.placeholder}
                   value={carbs}
-                  onChangeText={setCarbs}
+                  onChangeText={handleMacroChange(setCarbs)}
                   keyboardType="numeric"
                 />
               </View>
 
+              {/* Fat */}
               <View style={styles.macroInput}>
                 <Text style={[styles.label, { color: '#6BCB77' }]}>Fat (g)</Text>
                 <TextInput
@@ -152,11 +166,43 @@ export default function ManualFoodScreen({ navigation, theme }) {
                   placeholder="0"
                   placeholderTextColor={theme.placeholder}
                   value={fat}
-                  onChangeText={setFat}
+                  onChangeText={handleMacroChange(setFat)}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              {/* Calories — auto or manual */}
+              <View style={styles.macroInput}>
+                <View style={styles.calLabelRow}>
+                  <Text style={[styles.label, { color: theme.textSecondary }]}>
+                    Calories <Text style={{ color: theme.danger }}>*</Text>
+                  </Text>
+                  {!autoCalc && (
+                    <TouchableOpacity onPress={() => setAutoCalc(true)}>
+                      <Text style={[styles.resetLabel, { color: theme.accent }]}>Auto</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <TextInput
+                  style={[styles.macroField, {
+                    backgroundColor: autoCalc ? theme.accentLight : theme.inputBg,
+                    borderColor: autoCalc ? theme.accent : theme.inputBorder,
+                    color: theme.text,
+                  }]}
+                  placeholder="0"
+                  placeholderTextColor={theme.placeholder}
+                  value={calories}
+                  onChangeText={handleCaloriesChange}
                   keyboardType="numeric"
                 />
               </View>
             </View>
+
+            {autoCalc && (protein || carbs || fat) ? (
+              <Text style={[styles.autoNote, { color: theme.textTertiary }]}>
+                ⚡ Calories calculated using 4-4-9 rule. Tap calories to override.
+              </Text>
+            ) : null}
           </View>
 
           {/* Preview card */}
@@ -207,7 +253,6 @@ const styles = StyleSheet.create({
   back: { fontSize: 15, fontWeight: '500', marginBottom: 4 },
   title: { fontSize: 26, fontWeight: '700', letterSpacing: -0.5 },
   subtitle: { fontSize: 15 },
-
   emojiSection: { borderRadius: 16, borderWidth: 1, padding: 14, gap: 8 },
   emojiHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   emojiToggle: { fontSize: 13, fontWeight: '600' },
@@ -215,18 +260,18 @@ const styles = StyleSheet.create({
   emojiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 },
   emojiBtn: { padding: 6 },
   emojiOption: { fontSize: 26 },
-
   inputGroup: { gap: 6 },
   label: { fontSize: 13, fontWeight: '500' },
   input: { height: 50, borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, fontSize: 15 },
-
   macroCard: { borderRadius: 20, borderWidth: 1, padding: 16, gap: 12 },
   macroCardTitle: { fontSize: 15, fontWeight: '700' },
   macroCardSub: { fontSize: 12, marginTop: -6 },
   macroGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   macroInput: { width: '47%', gap: 6 },
   macroField: { height: 48, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 14, fontSize: 16, fontWeight: '600' },
-
+  calLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  resetLabel: { fontSize: 11, fontWeight: '600' },
+  autoNote: { fontSize: 11, marginTop: -4 },
   previewCard: { borderRadius: 16, borderWidth: 1, padding: 14, gap: 8 },
   previewTitle: { fontSize: 12, fontWeight: '500' },
   previewRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -236,7 +281,6 @@ const styles = StyleSheet.create({
   previewMacros: { fontSize: 12 },
   calBadge: { borderRadius: 20, paddingVertical: 5, paddingHorizontal: 10 },
   calBadgeText: { fontSize: 13, fontWeight: '600' },
-
   logBtn: { height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   logBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   cancel: { textAlign: 'center', fontSize: 14 },
